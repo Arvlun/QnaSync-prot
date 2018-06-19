@@ -1,0 +1,101 @@
+﻿@model IEnumerable<qnaSyncGUI.Models.QnAItem>
+
+@{
+    ViewBag.Title = "FAQ-hantering";
+}
+
+<h2>FAQ - Hantering</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create") |
+    @Html.ActionLink("Sync", "Sync") |
+    @Html.ActionLink("Publish", "Publish")
+</p>
+
+<div id='confirmModal' class='modal'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id='myModalContent'></div>
+        </div>
+    </div>
+
+</div>
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.ItemId)
+        </th>
+        <th style="width: 200px">
+            @Html.DisplayNameFor(model => model.Questions)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Answer)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.IsActive)
+        </th>
+        <th style="width: 200px">
+            @Html.DisplayNameFor(model => model.Metadata)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.ItemId)
+            </td>
+            <td>
+                @{
+                    foreach (var question in item.Questions)
+                    {
+                        @question <br /><br />
+                    }
+                }
+            </td>
+            <td>
+                <markdown>@Html.Raw(HttpUtility.HtmlEncode(item.Answer).Replace("\n", "<br/>"))</markdown>
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsActive)
+            </td>
+            <td>
+                @{
+                    foreach (var metadata in item.Metadata)
+                    {
+                        @metadata.name <text>:</text> @metadata.value <br /><br />
+                    }
+                }
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { item.ItemId }) <br />
+                @*@Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |*@
+                @Html.ActionLink("Delete", "Delete", new { item.ItemId })
+                @*@Html.ActionLink("Sync item", "SyncItem", new { item.ItemId })*@
+                <a href="#" id="sync-item" onclick="CheckUpdate(@item.ItemId)">Sync Item</a>
+                <span id="@item.ItemId" style="display: none;"><img src="~/Image/ajax-loader.gif" /></span>
+            </td>
+        </tr>
+    }
+
+</table>
+<script>
+
+    function CheckUpdate(id) {
+        $.get('/Home/CheckIfUpdatedQuestion', { 'itemid': id }, function (response) {
+
+            $('#' + id).show();
+
+            if (response.result)
+            {
+                $('#' + id).hide();
+                $('#myModalContent').html("<div style='padding: 15px;'>The questions for this item differs from the one synced ones. Would you like to update the questions?<br> <b>Yes:</b> Resets the questions of the synced item (Any learned question phrases will be removed) <br> <b>No:</b> Will add the updated question to the question phrases but keep the old one.<br><br> <a href='/Home/SyncItem?ItemId=" + id + "&ResetQuestions=true'>Yes</a>  <a href='/Home/SyncItem?ItemId=" + id +"&&ResetQuestions=false'>No</a> </div >");
+                $('#confirmModal').modal('show');
+            } else {
+                $('#' + id).hide();
+            }
+        })
+    }
+</script>
